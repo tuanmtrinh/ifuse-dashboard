@@ -1,0 +1,32 @@
+import { google } from "googleapis";
+
+export async function pushToSheet(data) {
+  const auth = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET
+  );
+
+  auth.setCredentials({
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+  });
+
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const spreadsheetId = "PASTE_YOUR_SHEET_ID_HERE";
+
+  const values = data.map(row => [
+    row.time,
+    row.config,
+    row.yield,
+    row.fail,
+  ]);
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: "RAW_DATA!A2",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values,
+    },
+  });
+}
