@@ -1,17 +1,33 @@
+import { chromium } from "playwright";
 import { pushToSheet } from "./pushToSheet.js";
 
-async function main() {
-  const fakeData = [
+async function runPlaywrightTest() {
+  const browser = await chromium.launch({
+    headless: true
+  });
+
+  const page = await browser.newPage();
+
+  await page.goto("https://example.com");
+
+  const title = await page.title();
+
+  await browser.close();
+
+  return [
     {
       time: new Date().toISOString(),
-      config: "TEST",
-      yield: 95.5,
-      fail: 4.5,
+      config: "PW_TEST",
+      yield: title.length,
+      fail: 0,
     },
   ];
+}
 
-  await pushToSheet(fakeData);
-  console.log("Done");
+async function main() {
+  const data = await runPlaywrightTest();
+  await pushToSheet(data);
+  console.log("✅ Playwright + Sheets OK");
 }
 
 main();
