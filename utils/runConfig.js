@@ -398,6 +398,62 @@ export async function runConfig({
     return allRows;
   }
 
+  /* ===============================
+     METRIC EXTRACTION (NEW)
+  =============================== */
+
+  let totalFail = 0;
+  let totalYieldProduct = 1;
+  let hasYield = false;
+  let inputSMT = 0;
+
+  for (const row of allRows) {
+
+    if (!Array.isArray(row)) continue;
+    if (row.length < 7) continue;
+
+    const route = row[0];
+    const station = row[1];
+
+    const input = Number(row[2] || 0);
+    const firstPass = Number(row[3] || 0);
+    const retestPass = Number(row[4] || 0);
+    const fail = Number(row[6] || 0);
+
+    // skip summary / empty rows
+    if (!station || station === "FPY (Total)") continue;
+
+    // ✅ INPUT: only SMT-FLASH (MLB)
+    if (route === "MLB" && station === "SMT-FLASH") {
+      inputSMT = input;
+    }
+
+    // ✅ FAIL: sum all stations
+    totalFail += fail;
+
+    // ✅ YIELD per station
+    const denom = firstPass + retestPass + fail;
+
+    if (denom > 0) {
+      const stationYield = (firstPass + retestPass) / denom;
+      totalYieldProduct *= stationYield;
+      hasYield = true;
+    }
+
+  }
+
+  const finalYield = hasYield ? totalYieldProduct : 0;
+
+  return {
+    input: inputSMT,
+    yield: finalYield,
+    fail: totalFail
+  };
+
+  /* ===============================
+     ORIGINAL EXCEL LOGIC BELOW (UNCHANGED)
+  =============================== */
+
   const OUTPUT_DIR = path.join(
     process.cwd(),
     "output",
