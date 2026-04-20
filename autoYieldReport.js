@@ -8,7 +8,8 @@ import { parseEncodeFlag } from './utils/timeParser.js';
 import { runConfig } from './utils/runConfig.js';
 import { login } from './login.js';
 import { parseArgs } from './utils/parseArgs.js';
-import { getSchedules } from './utils/schedule.js'; // ✅ NEW
+import { getSchedules } from './utils/schedule.js';
+import { pushToSheet } from "./pushToSheet.js";
 
 /* ===============================
    VN Time Helper (IMPORTANT)
@@ -266,6 +267,26 @@ if (schedules.length) {
         skipTrueFail: noFailFlag,
         returnRows: false
       });
+
+      // ✅ NEW: push summary to Google Sheets
+      try {
+        const sheetName = `${cfg.name}_${sch.label}`;
+
+        await pushToSheet(
+          [{
+            time: new Date().toISOString(),
+            config: cfg.name,
+            yield: 0,   // placeholder (next step we extract real)
+            fail: 0
+          }],
+          sheetName
+        );
+
+        console.log(`📤 Pushed to sheet: ${sheetName}`);
+
+      } catch (err) {
+        console.error(`❌ Failed to push sheet for ${cfg.name}_${sch.label}:`, err.message);
+      }
 
     }
 
