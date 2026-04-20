@@ -1,4 +1,4 @@
-name: Test Sheet Push
+name: Run Yield Report
 
 on:
   workflow_dispatch:
@@ -11,17 +11,24 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node (with npm cache)
         uses: actions/setup-node@v4
         with:
           node-version: 22
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Install Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright (only downloads if missing)
         run: npx playwright install --with-deps
 
       - name: Run script
