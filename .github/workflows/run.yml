@@ -37,3 +37,5 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          IFUSE_USERNAME: ${{ secrets.IFUSE_USERNAME }}
+          IFUSE_PASSWORD: ${{ secrets.IFUSE_PASSWORD }}
