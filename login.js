@@ -26,7 +26,7 @@ export async function login(context, loginFlag) {
     }
   }
 
-  console.log(`🔐 Using auth profile: ${loginFlag} (${auth.username})`);
+  console.log(`🔐 Using auth profile: ${loginFlag}`);
 
   const page = await context.newPage();
 
