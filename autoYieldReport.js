@@ -12,10 +12,24 @@ import { getSchedules } from './utils/schedule.js';
 import { pushToSheet } from "./pushToSheet.js";
 
 /* ===============================
-   VN Time Helper (IMPORTANT)
+   VN Time Helper
 =============================== */
 function getVNNow() {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
+}
+
+/* ===============================
+   Retry helper (NEW - robust)
+=============================== */
+async function retry(fn, attempts = 3) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (i === attempts - 1) throw e;
+      console.log(`Retry ${i + 1}...`);
+    }
+  }
 }
 
 /* ===============================
@@ -70,7 +84,7 @@ const __dirname = path.dirname(__filename);
 const CONFIG_FOLDER = path.join(__dirname, 'configs');
 
 /* ===============================
-   Parse CLI + ENV Args (UPDATED)
+   Parse CLI + ENV Args
 =============================== */
 
 const cliArgs = parseArgs(process.argv.slice(2));
@@ -85,10 +99,6 @@ const args = {
   "no-fail": cliArgs["no-fail"] || process.env.NO_FAIL === "true"
 };
 
-/* ===============================
-   Assign args (UNCHANGED STYLE)
-=============================== */
-
 const loginFlag = args.ifuse;
 const configArg = args.config;
 const allFlag = args.all;
@@ -98,7 +108,7 @@ const timeEnd = args.timeend;
 const noFailFlag = args["no-fail"];
 
 /* ===============================
-   Debug (NEW)
+   Debug
 =============================== */
 
 console.log("ENV CONFIG:");
@@ -113,15 +123,15 @@ console.log({
 });
 
 /* ===============================
-   Determine Time Mode (MINIMAL CHANGE)
+   Determine Time Mode
 =============================== */
 
 let encodeValues = [];
 let rangeMode = false;
-let schedules = []; // ✅ NEW
+let schedules = [];
 
 if (!timeArg && !timeStart && !timeEnd) {
-  // ✅ SCHEDULE MODE
+
   const now = getVNNow();
   schedules = getSchedules(now);
 
@@ -132,8 +142,6 @@ if (!timeArg && !timeStart && !timeEnd) {
 
 } else {
 
-  // === EXISTING LOGIC (UNCHANGED) ===
-
   if (timeStart || timeEnd) {
 
     if (!timeStart || !timeEnd) {
@@ -141,10 +149,7 @@ if (!timeArg && !timeStart && !timeEnd) {
       process.exit(1);
     }
 
-    const start = timeStart;
-    const end = timeEnd;
-
-    encodeValues = generateDateRange(start, end);
+    encodeValues = generateDateRange(timeStart, timeEnd);
     rangeMode = true;
 
   } else {
@@ -163,7 +168,7 @@ if (!timeArg && !timeStart && !timeEnd) {
     const date = new Date(year, month, day);
 
     if (date.getDay() === 0) {
-      console.error("❌ Sunday shifts are not valid. Use Monday instead.");
+      console.error("❌ Sunday shifts are not valid.");
       process.exit(1);
     }
 
@@ -173,34 +178,27 @@ if (!timeArg && !timeStart && !timeEnd) {
 }
 
 /* ===============================
-   Determine Config List (UNCHANGED)
+   Determine Config List
 =============================== */
 
 if (!allFlag && !configArg) {
-  console.error("❌ Missing config. Use --config or --all");
+  console.error("❌ Missing config.");
   process.exit(1);
 }
 
 let configNames = [];
 
 if (allFlag) {
-
   const files = fs.readdirSync(CONFIG_FOLDER);
-
-  configNames = files
-    .filter(f => f.endsWith('.json'))
-    .map(f => path.basename(f, '.json'));
-
+  configNames = files.filter(f => f.endsWith('.json')).map(f => path.basename(f, '.json'));
 } else {
-
   configNames = configArg.split(',');
-
 }
 
 console.log("Configs to run:", configNames.join(', '));
 
 /* ===============================
-   Load Config Files (UNCHANGED)
+   Load Config Files
 =============================== */
 
 const configs = [];
@@ -216,19 +214,16 @@ for (const name of configNames) {
 
   const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
-  configs.push({
-    name,
-    data: config
-  });
+  configs.push({ name, data: config });
 }
 
 /* ===============================
-   Launch Browser (SMALL HARDENING)
+   Launch Browser
 =============================== */
 
 const browser = await chromium.launch({
   headless: true,
-  args: ['--no-sandbox', '--disable-setuid-sandbox'] // ✅ NEW
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
 });
 
 const context = await browser.newContext({
@@ -238,12 +233,11 @@ const context = await browser.newContext({
 await login(context, loginFlag);
 
 /* ===============================
-   Run Mode Switch (MINIMAL CHANGE)
+   Run Mode
 =============================== */
 
 if (schedules.length) {
 
-  // ✅ SCHEDULE MODE
   for (const sch of schedules) {
 
     const { timeFrom, timeTo } = sch;
@@ -257,35 +251,44 @@ if (schedules.length) {
 
       console.log(`Running config: ${cfg.name}`);
 
-      await runConfig({
-        context,
-        configName: cfg.name,
-        config: cfg.data,
-        timeFrom,
-        timeTo,
-        encodeValue: sch.label,
-        skipTrueFail: noFailFlag,
-        returnRows: false
-      });
+      let result;
 
-      // ✅ NEW: push summary to Google Sheets
+      try {
+        result = await runConfig({
+          context,
+          configName: cfg.name,
+          config: cfg.data,
+          timeFrom,
+          timeTo,
+          encodeValue: sch.label,
+          skipTrueFail: noFailFlag,
+          returnRows: false
+        });
+      } catch (err) {
+        console.error(`❌ runConfig failed: ${cfg.name}`, err.message);
+        continue;
+      }
+
       try {
         const sheetName = `${cfg.name}_${sch.label}`;
 
-        await pushToSheet(
-          [{
-            time: new Date().toISOString(),
-            config: cfg.name,
-            yield: 0,   // placeholder (next step we extract real)
-            fail: 0
-          }],
-          sheetName
+        await retry(() =>
+          pushToSheet(
+            [{
+              time: new Date().toISOString(),
+              config: cfg.name,
+              input: result?.input ?? 0,
+              yield: result?.yield ?? 0,
+              fail: result?.fail ?? 0
+            }],
+            sheetName
+          )
         );
 
         console.log(`📤 Pushed to sheet: ${sheetName}`);
 
       } catch (err) {
-        console.error(`❌ Failed to push sheet for ${cfg.name}_${sch.label}:`, err.message);
+        console.error(`❌ Sheet push failed: ${cfg.name}_${sch.label}`, err.message);
       }
 
     }
@@ -293,8 +296,6 @@ if (schedules.length) {
   }
 
 } else {
-
-  // === EXISTING FLOW (UNCHANGED) ===
 
   const combinedRows = {};
 
