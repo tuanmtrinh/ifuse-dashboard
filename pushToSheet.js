@@ -1,3 +1,6 @@
+console.log("🔥 NEW VERSION RUNNING");
+console.log("🔥 SHEET ID:", "19HvYQbJ4lqgPND9AB1yvqeOaAh_de-I5V9YsK3BsFt8");
+
 import { google } from "googleapis";
 
 export async function pushToSheet(data) {
