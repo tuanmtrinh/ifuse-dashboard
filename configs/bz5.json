@@ -1,0 +1,78 @@
+{
+  "name": "BZ5 BLT",
+  "api": {
+    "endpoint": "/services/WsGLCustomize.asmx/YieldReportFreshFac"
+  },
+  "metrics": {
+    "input": {
+      "route": "MLB",
+      "station": "SMT-FLASH"
+    }
+  },
+  "columns": [
+    "COUNT_TOTAL",
+    "FIRST_PASS",
+    "RETEST_PASS",
+    "FINAL_PASS",
+    "FINAL_FAIL",
+    "TPY_RATE",
+    "FPF_RATE",
+    "RPY_RATE"
+  ],
+  "requests": [
+    {
+      "label": "MLB",
+      "payload": {
+        "section": "BLT",
+        "family": "BZ5",
+        "route": "1742364625",
+        "modelName": "",
+        "group": "",
+        "line": "",
+        "loction": "0",
+        "type": "",
+        "workOrder": ""
+      },
+      "stations": [
+        "SMT-FLASH",
+        "SMT-BFT-MLB",
+        "SMT-RF-CAL",
+        "SMT-RF-CELL"
+      ]
+    },
+    {
+      "label": "SLB",
+      "payload": {
+        "section": "BLT",
+        "family": "BZ5",
+        "route": "1742674140",
+        "modelName": "",
+        "group": "",
+        "line": "",
+        "loction": "0",
+        "type": "",
+        "workOrder": ""
+      },
+      "stations": [
+        "SMT-SLB"
+      ]
+    },
+    {
+      "label": "CLB",
+      "payload": {
+        "section": "BLT",
+        "family": "BZ5",
+        "route": "1742675537",
+        "modelName": "",
+        "group": "",
+        "line": "",
+        "loction": "0",
+        "type": "",
+        "workOrder": ""
+      },
+      "stations": [
+        "SMT-CLB"
+      ]
+    }
+  ]
+}
