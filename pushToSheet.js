@@ -12,7 +12,7 @@ export async function pushToSheet(data) {
 
   const sheets = google.sheets({ version: "v4", auth });
 
-  const spreadsheetId = "PASTE_YOUR_SHEET_ID_HERE";
+  const spreadsheetId = "19HvYQbJ4lqgPND9AB1yvqeOaAh_de-I5V9YsK3BsFt8";
 
   const values = data.map(row => [
     row.time,
