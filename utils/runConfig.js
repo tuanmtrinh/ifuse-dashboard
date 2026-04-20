@@ -424,7 +424,13 @@ export async function runConfig({
     if (!station || station === "FPY (Total)") continue;
 
     // ✅ INPUT: only SMT-FLASH (MLB)
-    if (route === "MLB" && station === "SMT-FLASH") {
+    const metricDef = config.metrics?.input;
+    
+    if (
+      metricDef &&
+      route === metricDef.route &&
+      station === metricDef.station
+    ) {
       inputSMT = input;
     }
 
