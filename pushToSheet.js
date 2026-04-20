@@ -14,6 +14,8 @@ export async function pushToSheet(data) {
 
   const spreadsheetId = "19HvYQbJ4lqgPND9AB1yvqeOaAh_de-I5V9YsK3BsFt8";
 
+  console.log("🚨 SHEET ID:", spreadsheetId);
+
   const values = data.map(row => [
     row.time,
     row.config,
