@@ -132,7 +132,17 @@ let schedules = [];
 
 if (!timeArg && !timeStart && !timeEnd) {
 
-  const now = getVNNow();
+   const forcedHour = process.env.FORCE_HOUR;
+   
+   let now;
+   
+   if (forcedHour !== undefined) {
+     now = getVNNow();
+     now.setHours(Number(forcedHour), 0, 0, 0);
+     console.log(`⚠️ FORCE_HOUR enabled → ${forcedHour}:00`);
+   } else {
+     now = getVNNow();
+   }
   schedules = getSchedules(now);
 
   if (!schedules.length) {
